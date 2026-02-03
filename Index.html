@@ -1,12 +1,302 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shawarma Rehab POS</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --primary-red: #d32f2f;
+            --bg-gray: #f4f6f8;
+            --white: #ffffff;
+            --text: #212121;
+        }
+
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+
+        body {
+            margin: 0;
+            background-color: var(--bg-gray);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            background: var(--primary-red);
+            color: white;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .brand { font-weight: 800; font-size: 1.2rem; }
+
+        #langToggle {
+            background: white;
+            color: var(--primary-red);
+            border: none;
+            padding: 6px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .app-body { display: flex; flex: 1; overflow: hidden; }
+
+        /* Sidebar Categories */
+        .sidebar {
+            width: 150px;
+            background: white;
+            border-right: 1px solid #ddd;
+            overflow-y: auto;
+        }
+
+        [dir="rtl"] .sidebar { border-right: none; border-left: 1px solid #ddd; }
+
+        .cat-btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-bottom: 1px solid #eee;
+            background: none;
+            cursor: pointer;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .cat-btn.active { background: #fff3f3; color: var(--primary-red); border-left: 4px solid var(--primary-red); }
+
+        /* Menu Grid */
+        .menu-container {
+            flex: 2;
+            padding: 20px;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 15px;
+            align-content: start;
+        }
+
+        .item-card {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: 0.2s;
+        }
+
+        .item-card:hover { border-color: var(--primary-red); transform: translateY(-3px); }
+
+        .item-icon { font-size: 2rem; display: block; margin-bottom: 10px; }
+
+        /* Right Sidebar (Cart) */
+        .cart-sidebar {
+            width: 350px;
+            background: white;
+            border-left: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        [dir="rtl"] .cart-sidebar { border-left: none; border-right: 1px solid #ddd; }
+
+        .cart-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--primary-red);
+            margin-bottom: 15px;
+        }
+
+        .cart-list { flex: 1; overflow-y: auto; }
+
+        .cart-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .total-box {
+            padding-top: 20px;
+            border-top: 2px solid #eee;
+            font-size: 1.4rem;
+            font-weight: 800;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .checkout-btn {
+            width: 100%;
+            padding: 18px;
+            background: #2e7d32;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .checkout-btn:hover { background: #1b5e20; }
+    </style>
+</head>
 <body>
 
-<h1>My First Heading</h1>
+<header>
+    <div class="brand">SHAWARMA REHAB - شاورما رحاب</div>
+    <button id="langToggle" onclick="toggleLanguage()">English / عربي</button>
+</header>
 
-<p>My first paragraph.</p>
+<div class="app-body">
+    <aside class="sidebar" id="sidebar"></aside>
 
+    <main class="menu-container" id="menuGrid"></main>
+
+    <aside class="cart-sidebar">
+        <div class="cart-title" data-en="Current Order" data-ar="الطلب الحالي">Current Order</div>
+        <div class="cart-list" id="cartList"></div>
+        <div class="cart-footer">
+            <div class="total-box">
+                <span data-en="Total" data-ar="المجموع">Total</span>
+                <span><span id="totalPrice">0</span> SAR</span>
+            </div>
+            <button class="checkout-btn" onclick="generatePDF()" data-en="GENERATE RECEIPT" data-ar="إصدار فاتورة">GENERATE RECEIPT</button>
+        </div>
+    </aside>
+</div>
+
+<script>
+    const products = [
+        { cat: "Shawarma", arCat: "شاورما", en: "Regular Shawarma", ar: "شاورما عادي", price: 6, icon: "🌯" },
+        { cat: "Shawarma", arCat: "شاورما", en: "Cheese Shawarma", ar: "شاورما جين", price: 8, icon: "🧀" },
+        { cat: "Shawarma", arCat: "شاورما", en: "Rocket Shawarma", ar: "شاورما صاروخ", price: 10, icon: "🚀" },
+        { cat: "Shawarma", arCat: "شاورما", en: "Arabic Shawarma", ar: "شاورما عربي", price: 12, icon: "🍱" },
+        { cat: "Burger", arCat: "همبرجر", en: "Chicken Burger", ar: "همبرجر دجاج", price: 6, icon: "🍔" },
+        { cat: "Burger", arCat: "همبرجر", en: "Meat Burger", ar: "همبرجر لحم", price: 7, icon: "🍔" },
+        { cat: "Fries", arCat: "بطاطس", en: "Regular Fries", ar: "بطاطس عادي", price: 5, icon: "🍟" },
+        { cat: "Tortilla", arCat: "تورتيلا", en: "Chicken Tortilla", ar: "تورتيلا دجاج", price: 13, icon: "🌯" },
+        { cat: "Samosa", arCat: "سمبوسة", en: "Regular Samosa", ar: "سمبوسة عادي", price: 12, icon: "🥟" }
+    ];
+
+    let cart = [];
+    let lang = 'en';
+    let activeCat = 'All';
+
+    function init() {
+        renderSidebar();
+        renderMenu();
+    }
+
+    function renderSidebar() {
+        const side = document.getElementById('sidebar');
+        const categories = ['All', ...new Set(products.map(p => p.cat))];
+        side.innerHTML = categories.map(c => {
+            const label = (c === 'All') ? (lang === 'en' ? 'All' : 'الكل') : (lang === 'en' ? c : products.find(p=>p.cat===c).arCat);
+            return `<button class="cat-btn ${activeCat === c ? 'active' : ''}" onclick="setCat('${c}')">${label}</button>`;
+        }).join('');
+    }
+
+    function renderMenu() {
+        const grid = document.getElementById('menuGrid');
+        const items = activeCat === 'All' ? products : products.filter(p => p.cat === activeCat);
+        grid.innerHTML = items.map(p => `
+            <div class="item-card" onclick="addToCart(${products.indexOf(p)})">
+                <span class="item-icon">${p.icon}</span>
+                <strong style="display:block; min-height:40px;">${lang === 'en' ? p.en : p.ar}</strong>
+                <span style="color:var(--primary-red); font-weight:bold;">${p.price} SAR</span>
+            </div>
+        `).join('');
+    }
+
+    function setCat(c) { activeCat = c; renderSidebar(); renderMenu(); }
+
+    function addToCart(index) {
+        cart.push(products[index]);
+        updateCart();
+    }
+
+    function updateCart() {
+        const list = document.getElementById('cartList');
+        list.innerHTML = cart.map((item, i) => `
+            <div class="cart-row">
+                <span>${lang === 'en' ? item.en : item.ar}</span>
+                <span>${item.price} SAR</span>
+            </div>
+        `).join('');
+        const total = cart.reduce((sum, item) => sum + item.price, 0);
+        document.getElementById('totalPrice').innerText = total;
+    }
+
+    function toggleLanguage() {
+        lang = lang === 'en' ? 'ar' : 'en';
+        document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+        document.querySelectorAll('[data-en]').forEach(el => el.innerText = el.getAttribute(`data-${lang}`));
+        init();
+        updateCart();
+    }
+
+    function generatePDF() {
+        if (cart.length === 0) {
+            alert(lang === 'en' ? "Cart is empty!" : "السلة فارغة!");
+            return;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        let y = 20;
+
+        // PDF Header
+        doc.setFontSize(22);
+        doc.text("SHAWARMA REHAB", 105, y, { align: "center" });
+        y += 10;
+        doc.setFontSize(12);
+        doc.text("Order Receipt / فاتورة طلب", 105, y, { align: "center" });
+        y += 15;
+
+        // Line
+        doc.line(20, y, 190, y);
+        y += 10;
+
+        // Items
+        doc.setFontSize(10);
+        cart.forEach((item, index) => {
+            doc.text(`${index + 1}. ${item.en}`, 20, y);
+            doc.text(`${item.price} SAR`, 170, y);
+            y += 7;
+        });
+
+        // Total
+        y += 5;
+        doc.line(20, y, 190, y);
+        y += 10;
+        doc.setFontSize(14);
+        const total = cart.reduce((sum, item) => sum + item.price, 0);
+        doc.text(`TOTAL: ${total} SAR`, 170, y, { align: "right" });
+
+        // Footer
+        y += 20;
+        doc.setFontSize(10);
+        doc.text("Thank you for choosing Shawarma Rehab!", 105, y, { align: "center" });
+
+        doc.save(`Receipt_${Date.now()}.pdf`);
+        
+        // Clear cart after checkout
+        cart = [];
+        updateCart();
+    }
+
+    init();
+</script>
 </body>
 </html>
-
