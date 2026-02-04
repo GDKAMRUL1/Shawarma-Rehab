@@ -15,6 +15,27 @@
 
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
 
+
+        /* --- Login Section --- */
+‎        #loginPage {
+‎            height: 100vh; width: 100%; display: flex; align-items: center; justify-content: center;
+‎            background: linear-gradient(135deg, var(--primary-red) 0%, #8b0000 100%);
+‎            position: absolute; z-index: 2000;
+‎        }
+‎        .login-card {
+‎            background: white; padding: 40px; border-radius: 15px; box-shadow: var(--shadow);
+‎            width: 90%; max-width: 400px; text-align: center;
+‎        }
+‎        .login-card h2 { color: var(--primary-red); margin-bottom: 25px; }
+‎        .login-card input {
+‎            width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd;
+‎            border-radius: 8px; font-size: 1rem; outline: none;
+‎        }
+‎        .login-card button {
+‎            width: 100%; padding: 12px; background: var(--primary-red); color: white;
+‎            border: none; border-radius: 8px; font-weight: bold; cursor: pointer;
+‎        }
+
         body {
             margin: 10px;
             background-color: var(--bg-gray);
@@ -158,7 +179,15 @@
     <div class="brand">SHAWARMA REHAB - شاورما رحاب</div>
     <button id="langToggle" onclick="toggleLanguage()">English / عربي</button>
 </header>
-
+<div id="loginPage"> <div class="login-card"> <h2>Shawarma Rehab Login</h2> <input type="text" id="username" placeholder="Username (Admin)"> <input type="password" id="password" placeholder="Password
+‎
+‎(1234)">
+‎
+‎<button onclick="login()">Login</button>
+‎
+‎</div>
+‎
+‎</div>
 <div class="app-body">
     <aside class="sidebar" id="sidebar"></aside>
 
@@ -178,6 +207,26 @@
 </div>
 
 <script>
+
+function login() {
+‎
+‎if(document.getElementByld('usern ame').value === 'Admin' && document.ge tElementByld('password').value === '1234')
+‎
+‎{
+‎
+‎document.getElementB yld('loginPage').style.display = 'none';
+‎
+‎document.getElementBy Id('posInterface').style.display = 'flex';
+‎
+‎render();
+‎
+‎} else { alert("Wrong credentials"); }
+‎
+‎}
+‎
+
+
+    
     const products = [
         { cat: "Shawarma", arCat: "شاورما", en: "Regular Shawarma", ar: "شاورما عادي", price: 6, icon: "🌯" },
         { cat: "Shawarma", arCat: "شاورما", en: "Cheese Shawarma", ar: "شاورما جين", price: 8, icon: "🧀" },
