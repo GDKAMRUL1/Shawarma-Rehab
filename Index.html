@@ -2,215 +2,1349 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Shawarma Rehab POS - Fixed</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shawarma Rehab POS</title>
+    
+    <!-- Google Fonts: Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- jsPDF Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
     <style>
         :root {
-            --primary: #d32f2f;
-            --secondary: #2e7d32;
-            --bg: #f8f9fa;
+            --primary-red: #d32f2f;
+            --dark-red: #b71c1c;
+            --light-red: #ffcdd2;
             --white: #ffffff;
-            --shadow: 0 4px 12px rgba(0,0,0,0.1);
+            --gray-bg: #f5f5f5;
+            --text-dark: #212121;
+            --text-gray: #757575;
+            --border-color: #e0e0e0;
+            --sidebar-width: 260px;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background: var(--bg); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-
-        /* --- Login Section (Fixed) --- */
-        #loginPage {
-            position: fixed; inset: 0; z-index: 9999; background: var(--primary);
-            display: flex; align-items: center; justify-content: center;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
-        .login-card {
-            background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 350px;
-            text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+
+        body {
+            background-color: var(--gray-bg);
+            color: var(--text-dark);
+            overflow: hidden;
         }
-        .login-card input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; }
-        .login-card button { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
 
-        /* --- POS Interface --- */
-        #posInterface { display: none; flex-direction: column; height: 100vh; }
-        header { background: var(--primary); color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; }
-        
-        .app-container { display: flex; flex: 1; overflow: hidden; }
+        /* --- LOGIN SCREEN --- */
+        #loginScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary-red) 0%, var(--dark-red) 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
 
-        /* Sidebar - Categories */
-        .sidebar { width: 150px; background: white; border-right: 1px solid #ddd; overflow-y: auto; flex-shrink: 0; }
-        .cat-btn { width: 100%; padding: 15px; border: none; background: none; text-align: left; cursor: pointer; font-weight: 600; border-bottom: 1px solid #f0f0f0; }
-        .cat-btn.active { background: #fff5f5; color: var(--primary); border-left: 4px solid var(--primary); }
+        .login-container {
+            background: var(--white);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
 
-        /* Menu Grid */
-        .menu-grid { flex: 1; padding: 15px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; align-content: start; }
-        .item-card { background: white; padding: 15px; border-radius: 10px; text-align: center; box-shadow: var(--shadow); cursor: pointer; border: 2px solid transparent; }
-        .item-card:hover { border-color: var(--primary); }
-        .item-icon { font-size: 2rem; display: block; margin-bottom: 5px; }
-        .item-price { color: var(--primary); font-weight: bold; }
+        .login-logo {
+            width: 80px;
+            height: 80px;
+            background: var(--primary-red);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: 700;
+            margin: 0 auto 20px;
+        }
 
-        /* Advanced Cart Sidebar */
-        .cart-sidebar { width: 350px; background: white; border-left: 1px solid #ddd; display: flex; flex-direction: column; }
-        .cart-header { padding: 15px; border-bottom: 2px solid #eee; font-weight: bold; }
-        .cart-list { flex: 1; overflow-y: auto; padding: 10px; }
-        .cart-row { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f9f9f9; align-items: center; }
-        
-        .qty-controls { display: flex; align-items: center; gap: 8px; }
-        .qty-btn { width: 24px; height: 24px; border-radius: 50%; border: 1px solid #ddd; background: #eee; cursor: pointer; }
+        .login-container h1 {
+            color: var(--primary-red);
+            margin-bottom: 8px;
+            font-size: 24px;
+        }
 
-        .cart-footer { padding: 20px; border-top: 2px solid #eee; }
-        .total-row { display: flex; justify-content: space-between; font-size: 1.4rem; font-weight: bold; margin-bottom: 15px; }
-        .checkout-btn { width: 100%; padding: 15px; background: var(--secondary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .login-container p {
+            color: var(--text-gray);
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
 
-        /* Mobile Friendly CSS */
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 14px;
+            color: var(--text-dark);
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--primary-red);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary-red);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.1s;
+        }
+
+        .btn-login:hover {
+            background: var(--dark-red);
+        }
+
+        .btn-login:active {
+            transform: scale(0.98);
+        }
+
+        .error-msg {
+            color: var(--primary-red);
+            font-size: 13px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        /* --- MAIN POS INTERFACE --- */
+        #posInterface {
+            display: none;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Header */
+        .app-header {
+            background: var(--white);
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            z-index: 100;
+            flex-shrink: 0;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-logo {
+            width: 45px;
+            height: 45px;
+            background: var(--primary-red);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .brand-text h2 {
+            font-size: 18px;
+            font-weight: 600;
+            line-height: 1.2;
+            color: var(--text-dark);
+        }
+
+        .brand-text span {
+            font-size: 12px;
+            color: var(--text-gray);
+            font-weight: 400;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid var(--border-color);
+            background: transparent;
+            color: var(--text-gray);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .btn-icon:hover {
+            background: var(--gray-bg);
+            color: var(--primary-red);
+        }
+
+        /* Main Layout */
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* --- SIDEBAR (Categories) --- */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--white);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            font-weight: 600;
+            color: var(--text-gray);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .category-list {
+            list-style: none;
+            padding: 8px 0;
+        }
+
+        .category-item {
+            padding: 14px 20px;
+            cursor: pointer;
+            border-left: 4px solid transparent;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-dark);
+            font-weight: 500;
+            font-size: 14px;
+            margin: 2px 8px;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .category-item:hover {
+            background: var(--gray-bg);
+        }
+
+        .category-item.active {
+            background: #ffebee;
+            border-left-color: var(--primary-red);
+            color: var(--primary-red);
+        }
+
+        .category-item i {
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
+        }
+
+        /* --- PRODUCT GRID --- */
+        .product-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--gray-bg);
+            overflow: hidden;
+        }
+
+        .mobile-categories {
+            display: none;
+            background: var(--white);
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+            overflow-x: auto;
+            white-space: nowrap;
+            gap: 8px;
+        }
+
+        .mobile-categories::-webkit-scrollbar {
+            display: none;
+        }
+
+        .mobile-cat-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: var(--gray-bg);
+            border: none;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-dark);
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .mobile-cat-btn.active {
+            background: var(--primary-red);
+            color: white;
+        }
+
+        .products-grid {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 20px;
+            align-content: start;
+        }
+
+        .product-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            border-color: var(--light-red);
+        }
+
+        .product-card::after {
+            content: '+';
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 24px;
+            height: 24px;
+            background: var(--primary-red);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .product-card:hover::after {
+            opacity: 1;
+        }
+
+        .product-icon {
+            font-size: 40px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .product-name {
+            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 4px;
+            color: var(--text-dark);
+            line-height: 1.3;
+        }
+
+        .product-arabic {
+            font-size: 11px;
+            color: var(--text-gray);
+            margin-bottom: 6px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .product-price {
+            color: var(--primary-red);
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        /* --- CART SECTION --- */
+        .cart-section {
+            width: 380px;
+            background: var(--white);
+            border-left: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            box-shadow: -4px 0 15px rgba(0,0,0,0.03);
+            flex-shrink: 0;
+        }
+
+        .cart-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--white);
+        }
+
+        .cart-header h3 {
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0;
+        }
+
+        .cart-count {
+            background: var(--primary-red);
+            color: white;
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            min-width: 24px;
+            text-align: center;
+        }
+
+        .btn-clear {
+            background: transparent;
+            border: none;
+            color: var(--text-gray);
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .btn-clear:hover {
+            color: var(--primary-red);
+            background: var(--gray-bg);
+        }
+
+        .cart-items {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0;
+            background: #fafafa;
+        }
+
+        .empty-cart {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-gray);
+        }
+
+        .empty-cart i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        /* --- DRAGGABLE CART ITEM --- */
+        .cart-item {
+            display: flex;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--white);
+            margin-bottom: 2px;
+            cursor: grab;
+            transition: all 0.2s ease;
+            position: relative;
+            border-left: 3px solid transparent;
+        }
+
+        .cart-item:active {
+            cursor: grabbing;
+        }
+
+        .cart-item.dragging {
+            opacity: 0.5;
+            background: var(--light-red);
+            border-left: 3px solid var(--primary-red);
+            transform: scale(1.02);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        .cart-item.drag-over {
+            border-top: 3px solid var(--primary-red);
+            background: #fff3f3;
+        }
+
+        .cart-item.drag-over-bottom {
+            border-bottom: 3px solid var(--primary-red);
+            background: #fff3f3;
+        }
+
+        .drag-handle {
+            color: var(--text-gray);
+            margin-right: 10px;
+            cursor: grab;
+            font-size: 16px;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+
+        .cart-item:hover .drag-handle {
+            opacity: 1;
+            color: var(--primary-red);
+        }
+
+        .cart-item-info {
+            flex: 1;
+            min-width: 0;
+            padding-right: 10px;
+        }
+
+        .cart-item-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-dark);
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .cart-item-arabic {
+            font-size: 11px;
+            color: var(--text-gray);
+            margin-bottom: 2px;
+        }
+
+        .cart-item-price {
+            font-size: 12px;
+            color: var(--primary-red);
+            font-weight: 500;
+        }
+
+        .cart-item-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 10px;
+        }
+
+        .qty-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 1px solid var(--border-color);
+            background: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dark);
+            transition: all 0.2s;
+            font-size: 12px;
+        }
+
+        .qty-btn:hover {
+            background: var(--primary-red);
+            color: white;
+            border-color: var(--primary-red);
+        }
+
+        .qty-value {
+            font-weight: 600;
+            min-width: 24px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .cart-item-total {
+            min-width: 60px;
+            text-align: right;
+            font-weight: 700;
+            color: var(--text-dark);
+            font-size: 14px;
+        }
+
+        .cart-footer {
+            padding: 20px 24px;
+            border-top: 2px solid var(--border-color);
+            background: var(--white);
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: var(--text-gray);
+        }
+
+        .summary-row.total {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed var(--border-color);
+        }
+
+        .btn-generate {
+            width: 100%;
+            padding: 16px;
+            background: var(--primary-red);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background 0.3s;
+            box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3);
+        }
+
+        .btn-generate:hover {
+            background: var(--dark-red);
+        }
+
+        .btn-generate:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* Drag hint */
+        .drag-hint {
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-gray);
+            padding: 8px;
+            background: #f0f0f0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* --- RESPONSIVE DESIGN --- */
+        @media (max-width: 1200px) {
+            :root {
+                --sidebar-width: 220px;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar {
+                display: none;
+            }
+            
+            .mobile-categories {
+                display: flex;
+            }
+            
+            .cart-section {
+                width: 320px;
+            }
+        }
+
         @media (max-width: 768px) {
-            .app-container { flex-direction: column; }
-            .sidebar { width: 100%; height: auto; display: flex; overflow-x: auto; border-right: none; border-bottom: 1px solid #ddd; }
-            .cat-btn { width: auto; white-space: nowrap; border-bottom: none; border-right: 1px solid #eee; }
-            .cart-sidebar { width: 100%; height: 35vh; border-left: none; border-top: 3px solid var(--primary); }
+            body {
+                overflow: auto;
+            }
+            
+            #posInterface {
+                height: auto;
+                min-height: 100vh;
+            }
+            
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .cart-section {
+                width: 100%;
+                border-left: none;
+                border-top: 2px solid var(--border-color);
+                max-height: 50vh;
+            }
+            
+            .products-grid {
+                grid-template-columns: repeat(2, 1fr);
+                padding: 16px;
+                gap: 12px;
+            }
+            
+            .app-header {
+                padding: 0 16px;
+                height: 60px;
+            }
+            
+            .brand-text h2 {
+                font-size: 16px;
+            }
+            
+            .brand-text span {
+                display: none;
+            }
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-red);
         }
     </style>
 </head>
 <body>
 
-    <div id="loginPage">
-        <div class="login-card">
-            <h2>Shawarma Rehab</h2>
-            <input type="text" id="username" placeholder="Username (Admin)">
-            <input type="password" id="password" placeholder="Password (1234)">
-            <button onclick="login()">Login</button>
+    <!-- LOGIN SCREEN -->
+    <div id="loginScreen">
+        <div class="login-container">
+            <div class="login-logo">SR</div>
+            <h1>Shawarma Rehab</h1>
+            <p>Point of Sale System</p>
+            
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="input-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" placeholder="Enter username" required autocomplete="off">
+                </div>
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="Enter password" required>
+                </div>
+                <button type="submit" class="btn-login">
+                    <i class="fas fa-lock"></i> Login
+                </button>
+                <div class="error-msg" id="loginError">Invalid credentials. Please try again.</div>
+            </form>
         </div>
     </div>
 
+    <!-- POS INTERFACE -->
     <div id="posInterface">
-        <header>
-            <div class="brand">SHAWARMA REHAB - شاورما رحاب</div>
-            <button onclick="toggleLang()" style="padding:5px 10px; border-radius:15px; border:none; cursor:pointer;">EN/AR</button>
+        
+        <!-- Header -->
+        <header class="app-header">
+            <div class="brand">
+                <div class="brand-logo">SR</div>
+                <div class="brand-text">
+                    <h2>Shawarma Rehab</h2>
+                    <span>مطعم شاورما ريهاب</span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn-icon" onclick="toggleLanguage()" title="Toggle Language">
+                    <i class="fas fa-globe"></i>
+                </button>
+                <button class="btn-icon" onclick="logout()" title="Logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
         </header>
 
-        <div class="app-container">
-            <aside class="sidebar" id="catList"></aside>
-            <main class="menu-grid" id="menuGrid"></main>
-            <aside class="cart-sidebar">
-                <div class="cart-header">Current Order</div>
-                <div class="cart-list" id="cartList"></div>
+        <!-- Main Content -->
+        <div class="main-content">
+            
+            <!-- Sidebar (Desktop) -->
+            <aside class="sidebar">
+                <div class="sidebar-header">Menu Categories</div>
+                <ul class="category-list" id="categoryList">
+                    <!-- Populated by JS -->
+                </ul>
+            </aside>
+
+            <!-- Product Section -->
+            <section class="product-section">
+                <!-- Mobile Categories -->
+                <div class="mobile-categories" id="mobileCategoryList">
+                    <!-- Populated by JS -->
+                </div>
+
+                <!-- Products Grid -->
+                <div class="products-grid" id="productsGrid">
+                    <!-- Populated by JS -->
+                </div>
+            </section>
+
+            <!-- Cart Section -->
+            <aside class="cart-section">
+                <div class="cart-header">
+                    <h3>
+                        <i class="fas fa-shopping-cart"></i>
+                        Current Order
+                        <span class="cart-count" id="cartCount">0</span>
+                    </h3>
+                    <button class="btn-clear" onclick="clearCart()">
+                        <i class="fas fa-trash"></i> Clear
+                    </button>
+                </div>
+
+                <div class="drag-hint" id="dragHint" style="display: none;">
+                    <i class="fas fa-hand-pointer"></i> Drag items to reorder
+                </div>
+
+                <div class="cart-items" id="cartItems">
+                    <!-- Cart items will be rendered here -->
+                </div>
+
                 <div class="cart-footer">
-                    <div class="total-row">
-                        <span>Total</span>
-                        <span><span id="totalPrice">0</span> SAR</span>
+                    <div class="summary-row">
+                        <span>Subtotal</span>
+                        <span id="subtotal">0.00 SR</span>
                     </div>
-                    <button class="checkout-btn" onclick="generatePDF()">GENERATE RECEIPT</button>
+                    <div class="summary-row">
+                        <span>Tax (VAT)</span>
+                        <span>0.00 SR</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Grand Total</span>
+                        <span id="grandTotal">0.00 SR</span>
+                    </div>
+                    <button class="btn-generate" id="generateBtn" onclick="generateReceipt()" disabled>
+                        <i class="fas fa-file-invoice"></i> GENERATE RECEIPT
+                    </button>
                 </div>
             </aside>
+
         </div>
     </div>
 
-<script>
-    // FIXED LOGIN FUNCTION
-    function login() {
-        const user = document.getElementById('username').value;
-        const pass = document.getElementById('password').value;
+    <script>
+        // --- COMPLETE MENU DATA FROM PDF ---
+        const categories = [
+            { id: 'all', name: 'All Items', icon: 'fa-th-large' },
+            { id: 'shawarma', name: 'Shawarma', icon: 'fa-drumstick-bite' },
+            { id: 'family', name: 'Family Meals', icon: 'fa-users' },
+            { id: 'samosa', name: 'Samosa', icon: 'fa-cookie' },
+            { id: 'burger', name: 'Burgers', icon: 'fa-hamburger' },
+            { id: 'fries', name: 'French Fries', icon: 'fa-utensils' },
+            { id: 'tortilla', name: 'Tortilla', icon: 'fa-bread-slice' },
+            { id: 'hotdog', name: 'Hot Dog', icon: 'fa-hotdog' },
+            { id: 'falafel', name: 'Falafel', icon: 'fa-leaf' },
+            { id: 'shrimp', name: 'Shrimp', icon: 'fa-fish' },
+            { id: 'zinger', name: 'Zinger', icon: 'fa-fire' },
+            { id: 'extras', name: 'Extras', icon: 'fa-plus-circle' }
+        ];
 
-        if(user === 'Admin' && pass === '1234') {
-            document.getElementById('loginPage').style.display = 'none';
-            document.getElementById('posInterface').style.display = 'flex';
-            init();
-        } else {
-            alert("Wrong credentials");
+        const products = [
+            // Shawarma
+            { id: 1, name: 'Regular Shawarma', arabic: 'شاورما عادي', price: 6, category: 'shawarma', emoji: '🌯' },
+            { id: 2, name: 'Cheese Shawarma', arabic: 'شاورما جبن', price: 8, category: 'shawarma', emoji: '🧀' },
+            { id: 3, name: 'Extra Shawarma', arabic: 'شاورما صاروخ', price: 10, category: 'shawarma', emoji: '🚀' },
+            { id: 4, name: 'Arabic Shawarma', arabic: 'شاورما عربي', price: 12, category: 'shawarma', emoji: '🥙' },
+            { id: 5, name: 'Arabic Cheese Shawarma', arabic: 'شاورما عربي جبن', price: 13, category: 'shawarma', emoji: '🧀' },
+            { id: 6, name: 'Italian Shawarma', arabic: 'شاورما إيطالي', price: 12, category: 'shawarma', emoji: '🍕' },
+            { id: 7, name: 'Mexican Shawarma', arabic: 'شاورما مكسيكي', price: 13, category: 'shawarma', emoji: '🌮' },
+            { id: 8, name: 'Spicy Shawarma', arabic: 'شاورما حار', price: 13, category: 'shawarma', emoji: '🌶️' },
+            { id: 9, name: 'Double Arabic', arabic: 'شاورما عربي دبل', price: 20, category: 'shawarma', emoji: '🍖' },
+            { id: 10, name: 'Double Arabic Cheese', arabic: 'شاورما عربي دبل جبن', price: 22, category: 'shawarma', emoji: '🥩' },
+            { id: 11, name: 'Shawarma Platter', arabic: 'شاورما شاميات', price: 35, category: 'shawarma', emoji: '🍽️' },
+            
+            // Family Meals
+            { id: 12, name: 'Family Max Meal', arabic: 'وجبة العائلة ماكس', price: 40, category: 'family', emoji: '👨‍👩‍👧‍👦' },
+            { id: 13, name: 'Family Shawarma', arabic: 'شاورما عائلي', price: 10, category: 'family', emoji: '🍱' },
+            { id: 14, name: 'Family Cheese Shawarma', arabic: 'شاورما عائلي جبن', price: 12, category: 'family', emoji: '🧀' },
+            { id: 15, name: 'Jumbo Meal', arabic: 'جامبو وجبة', price: 15, category: 'family', emoji: '🦸' },
+            { id: 16, name: 'Shawarma Bag Platter', arabic: 'شاورما صرة', price: 25, category: 'family', emoji: '🛍️' },
+            
+            // Samosa
+            { id: 17, name: 'Regular Samosa', arabic: 'سمبوسة عادي', price: 12, category: 'samosa', emoji: '🥟' },
+            { id: 18, name: 'Cheese Samosa', arabic: 'سمبوسة جبن', price: 15, category: 'samosa', emoji: '🧀' },
+            { id: 19, name: 'Extra Samosa', arabic: 'سمبوسة صاروخ', price: 17, category: 'samosa', emoji: '🚀' },
+            { id: 20, name: 'Samosa Platter', arabic: 'صحن سمبوسة', price: 20, category: 'samosa', emoji: '🍽️' },
+            
+            // Burgers
+            { id: 21, name: 'Chicken Burger', arabic: 'همبرجر دجاج', price: 6, category: 'burger', emoji: '🍔' },
+            { id: 22, name: 'Chicken Cheese Burger', arabic: 'همبرجر دجاج وجبن', price: 8, category: 'burger', emoji: '🍔' },
+            { id: 23, name: 'Meat Burger', arabic: 'همبرجر لحم', price: 7, category: 'burger', emoji: '🥩' },
+            { id: 24, name: 'Meat Cheese Burger', arabic: 'همبرجر لحم وجبن', price: 8, category: 'burger', emoji: '🍔' },
+            { id: 25, name: 'Arabic Meat Burger', arabic: 'همبرجر لحم عربي', price: 13, category: 'burger', emoji: '🥙' },
+            { id: 26, name: 'Spicy Chicken Burger', arabic: 'همبرجر دجاج حار', price: 12, category: 'burger', emoji: '🌶️' },
+            { id: 27, name: 'Grilled Spicy Chicken', arabic: 'همبرجر دجاج حار مشوي', price: 16, category: 'burger', emoji: '🔥' },
+            { id: 28, name: 'Grilled Burger', arabic: 'همبرجر مشوي', price: 7, category: 'burger', emoji: '🍖' },
+            { id: 29, name: 'Jumbo Burger', arabic: 'همبرجر جامبو', price: 10, category: 'burger', emoji: '🦸' },
+            
+            // French Fries
+            { id: 30, name: 'Regular Fries', arabic: 'بطاطس عادي', price: 5, category: 'fries', emoji: '🍟' },
+            { id: 31, name: 'Cheese Fries', arabic: 'بطاطس جبنة', price: 6, category: 'fries', emoji: '🧀' },
+            { id: 32, name: 'Spicy Fries', arabic: 'بطاطس حارة', price: 8, category: 'fries', emoji: '🌶️' },
+            { id: 33, name: 'Ketchup Fries', arabic: 'بطاطس كاتشب', price: 10, category: 'fries', emoji: '🍅' },
+            { id: 34, name: 'Fries Platter', arabic: 'صحن بطاطس', price: 8, category: 'fries', emoji: '🍽️' },
+            { id: 35, name: 'Mixed Platter', arabic: 'صحن خلطة', price: 1, category: 'fries', emoji: '🥗' },
+            
+            // Tortilla
+            { id: 36, name: 'Chicken Tortilla', arabic: 'تورتيلا دجاج', price: 13, category: 'tortilla', emoji: '🌯' },
+            { id: 37, name: 'Shawarma Tortilla', arabic: 'تورتيلا شاورما', price: 13, category: 'tortilla', emoji: '🥙' },
+            { id: 38, name: 'Tortilla with Cheese', arabic: 'تورتيلا وجبن', price: 16, category: 'tortilla', emoji: '🧀' },
+            { id: 39, name: 'Fajita Tortilla', arabic: 'تورتيلا فاهيتا', price: 7, category: 'tortilla', emoji: '🌮' },
+            
+            // Hot Dog
+            { id: 40, name: 'Chicken Hot Dog', arabic: 'هت دوج دجاج', price: 10, category: 'hotdog', emoji: '🌭' },
+            { id: 41, name: 'Chicken Cheese Hot Dog', arabic: 'هت دوج دجاج وجبن', price: 13, category: 'hotdog', emoji: '🧀' },
+            { id: 42, name: 'Regular Hot Dog', arabic: 'هت دوج عادي', price: 13, category: 'hotdog', emoji: '🌭' },
+            { id: 43, name: 'Hot Dog with Mix', arabic: 'هت دوج بالخلطة', price: 15, category: 'hotdog', emoji: '🌭' },
+            
+            // Falafel
+            { id: 44, name: 'Falafel Sandwich', arabic: 'فلافل ساندوتش', price: 6, category: 'falafel', emoji: '🥙' },
+            { id: 45, name: 'Falafel Platter', arabic: 'صحن فلافل', price: 15, category: 'falafel', emoji: '🍽️' },
+            
+            // Shrimp
+            { id: 46, name: 'Regular Shrimp', arabic: 'روبيان عادي', price: 12, category: 'shrimp', emoji: '🍤' },
+            { id: 47, name: 'Shrimp and Cheese', arabic: 'روبيان وجبن', price: 15, category: 'shrimp', emoji: '🧀' },
+            { id: 48, name: 'Shrimp with Mix', arabic: 'روبيان بالخلطة', price: 17, category: 'shrimp', emoji: '🍤' },
+            { id: 49, name: 'Shrimp Platter', arabic: 'صحن روبيان', price: 20, category: 'shrimp', emoji: '🍽️' },
+            
+            // Zinger
+            { id: 50, name: 'Zinger Sandwich', arabic: 'ساندويتش زنجر', price: 12, category: 'zinger', emoji: '🥪' },
+            { id: 51, name: 'Arabic Zinger', arabic: 'ساندويتش زنجر عربي', price: 15, category: 'zinger', emoji: '🥙' },
+            
+            // Extras
+            { id: 52, name: 'Ketchup', arabic: 'كاتشب', price: 1, category: 'extras', emoji: '🍅' },
+            { id: 53, name: 'Tortilla Bread', arabic: 'تورتيلا', price: 1, category: 'extras', emoji: '🫓' }
+        ];
+
+        // --- STATE ---
+        let cart = [];
+        let currentCategory = 'all';
+        let draggedItem = null;
+        let draggedIndex = null;
+
+        // --- LOGIN LOGIC ---
+        function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('loginError');
+
+            if (username === 'Admin' && password === '1234') {
+                document.getElementById('loginScreen').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('loginScreen').style.display = 'none';
+                    document.getElementById('posInterface').style.display = 'flex';
+                    initApp();
+                }, 500);
+            } else {
+                errorMsg.style.display = 'block';
+                const container = document.querySelector('.login-container');
+                container.style.animation = 'shake 0.5s';
+                setTimeout(() => container.style.animation = '', 500);
+            }
         }
-    }
 
-    const products = [
-        { cat: "Shawarma", en: "Regular Shawarma", ar: "شاورما عادي", price: 6, icon: "🌯" },
-        { cat: "Shawarma", en: "Cheese Shawarma", ar: "شاورما جين", price: 8, icon: "🧀" },
-        { cat: "Shawarma", en: "Arabic Shawarma", ar: "شاورما عربي", price: 12, icon: "🍱" },
-        { cat: "Burger", en: "Chicken Burger", ar: "همبرجر دجاج", price: 6, icon: "🍔" },
-        { cat: "Fries", en: "Regular Fries", ar: "بطاطس عادي", price: 5, icon: "🍟" },
-        { cat: "Samosa", en: "Regular Samosa", ar: "سمبوسة عادي", price: 12, icon: "🥟" }
-    ];
+        function logout() {
+            location.reload();
+        }
 
-    let cart = [], lang = 'en', activeCat = 'All';
+        // --- APP INITIALIZATION ---
+        function initApp() {
+            renderCategories();
+            renderMobileCategories();
+            renderProducts();
+            updateCartUI();
+        }
 
-    function init() {
-        renderSidebar();
-        renderMenu();
-    }
+        // --- RENDER FUNCTIONS ---
+        function renderCategories() {
+            const list = document.getElementById('categoryList');
+            list.innerHTML = categories.map(cat => `
+                <li class="category-item ${cat.id === currentCategory ? 'active' : ''}" 
+                    onclick="setCategory('${cat.id}')">
+                    <i class="fas ${cat.icon}"></i>
+                    ${cat.name}
+                </li>
+            `).join('');
+        }
 
-    function renderSidebar() {
-        const cats = ['All', ...new Set(products.map(p => p.cat))];
-        document.getElementById('catList').innerHTML = cats.map(c => 
-            `<button class="cat-btn ${activeCat === c ? 'active' : ''}" onclick="setCat('${c}')">${c}</button>`
-        ).join('');
-    }
+        function renderMobileCategories() {
+            const container = document.getElementById('mobileCategoryList');
+            container.innerHTML = categories.map(cat => `
+                <button class="mobile-cat-btn ${cat.id === currentCategory ? 'active' : ''}" 
+                        onclick="setCategory('${cat.id}')">
+                    <i class="fas ${cat.icon}"></i>
+                    ${cat.name}
+                </button>
+            `).join('');
+        }
 
-    function renderMenu() {
-        const grid = document.getElementById('menuGrid');
-        const items = activeCat === 'All' ? products : products.filter(p => p.cat === activeCat);
-        grid.innerHTML = items.map(p => `
-            <div class="item-card" onclick="addToCart(${products.indexOf(p)})">
-                <span class="item-icon">${p.icon}</span>
-                <strong style="display:block; min-height:35px;">${lang === 'en' ? p.en : p.ar}</strong>
-                <span class="item-price">${p.price} SAR</span>
-            </div>
-        `).join('');
-    }
+        function setCategory(id) {
+            currentCategory = id;
+            renderCategories();
+            renderMobileCategories();
+            renderProducts();
+        }
 
-    function setCat(c) { activeCat = c; renderSidebar(); renderMenu(); }
+        function renderProducts() {
+            const grid = document.getElementById('productsGrid');
+            const filtered = currentCategory === 'all' 
+                ? products 
+                : products.filter(p => p.category === currentCategory);
+            
+            grid.innerHTML = filtered.map(p => `
+                <div class="product-card" onclick="addToCart(${p.id})">
+                    <span class="product-icon">${p.emoji}</span>
+                    <div class="product-name">${p.name}</div>
+                    <div class="product-arabic">${p.arabic}</div>
+                    <div class="product-price">${p.price} SR</div>
+                </div>
+            `).join('');
+        }
 
-    function addToCart(idx) {
-        const existing = cart.find(i => i.pid === idx);
-        if(existing) { existing.qty++; } else { cart.push({ pid: idx, qty: 1 }); }
-        updateCart();
-    }
+        // --- CART LOGIC ---
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            const existing = cart.find(item => item.id === productId);
+            
+            if (existing) {
+                existing.qty++;
+            } else {
+                cart.push({ 
+                    id: product.id,
+                    name: product.name,
+                    arabic: product.arabic,
+                    price: product.price,
+                    emoji: product.emoji,
+                    qty: 1 
+                });
+            }
+            
+            updateCartUI();
+        }
 
-    function updateQty(idx, delta) {
-        cart[idx].qty += delta;
-        if(cart[idx].qty < 1) cart.splice(idx, 1);
-        updateCart();
-    }
+        function updateQty(productId, change) {
+            const item = cart.find(item => item.id === productId);
+            if (item) {
+                item.qty += change;
+                if (item.qty <= 0) {
+                    cart = cart.filter(i => i.id !== productId);
+                }
+            }
+            updateCartUI();
+        }
 
-    function updateCart() {
-        let total = 0;
-        document.getElementById('cartList').innerHTML = cart.map((item, i) => {
-            const p = products[item.pid];
-            const lineTotal = p.price * item.qty;
-            total += lineTotal;
-            return `
-                <div class="cart-row">
-                    <span>${lang === 'en' ? p.en : p.ar}</span>
-                    <div class="qty-controls">
-                        <button class="qty-btn" onclick="updateQty(${i}, -1)">-</button>
-                        <span>${item.qty}</span>
-                        <button class="qty-btn" onclick="updateQty(${i}, 1)">+</button>
+        function clearCart() {
+            if (cart.length === 0) return;
+            if (confirm('Are you sure you want to clear the cart?')) {
+                cart = [];
+                updateCartUI();
+            }
+        }
+
+        // --- DRAG AND DROP FUNCTIONS ---
+        function handleDragStart(e, index) {
+            draggedItem = cart[index];
+            draggedIndex = index;
+            e.target.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', index);
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+            document.querySelectorAll('.cart-item').forEach(item => {
+                item.classList.remove('drag-over', 'drag-over-bottom');
+            });
+            draggedItem = null;
+            draggedIndex = null;
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            
+            const cartItem = e.target.closest('.cart-item');
+            if (!cartItem || cartItem === document.querySelector('.cart-item.dragging')) return;
+            
+            const rect = cartItem.getBoundingClientRect();
+            const midpoint = rect.top + rect.height / 2;
+            
+            document.querySelectorAll('.cart-item').forEach(item => {
+                item.classList.remove('drag-over', 'drag-over-bottom');
+            });
+            
+            if (e.clientY < midpoint) {
+                cartItem.classList.add('drag-over');
+            } else {
+                cartItem.classList.add('drag-over-bottom');
+            }
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            const cartItem = e.target.closest('.cart-item');
+            if (!cartItem) return;
+            
+            const dropIndex = parseInt(cartItem.getAttribute('data-index'));
+            if (isNaN(dropIndex) || dropIndex === draggedIndex) return;
+            
+            const rect = cartItem.getBoundingClientRect();
+            const midpoint = rect.top + rect.height / 2;
+            const insertAfter = e.clientY > midpoint;
+            
+            const item = cart.splice(draggedIndex, 1)[0];
+            let newIndex = dropIndex;
+            
+            if (draggedIndex < dropIndex && !insertAfter) {
+                newIndex--;
+            } else if (draggedIndex > dropIndex && insertAfter) {
+                newIndex++;
+            }
+            
+            if (insertAfter) {
+                newIndex++;
+            }
+            
+            cart.splice(newIndex, 0, item);
+            updateCartUI();
+        }
+
+        function handleDragLeave(e) {
+            const cartItem = e.target.closest('.cart-item');
+            if (cartItem) {
+                cartItem.classList.remove('drag-over', 'drag-over-bottom');
+            }
+        }
+
+        function updateCartUI() {
+            const container = document.getElementById('cartItems');
+            const countBadge = document.getElementById('cartCount');
+            const subtotalEl = document.getElementById('subtotal');
+            const grandTotalEl = document.getElementById('grandTotal');
+            const generateBtn = document.getElementById('generateBtn');
+            const dragHint = document.getElementById('dragHint');
+            
+            const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
+            const grandTotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            
+            countBadge.textContent = totalQty;
+            subtotalEl.textContent = grandTotal.toFixed(2) + ' SR';
+            grandTotalEl.textContent = grandTotal.toFixed(2) + ' SR';
+            
+            generateBtn.disabled = cart.length === 0;
+            dragHint.style.display = cart.length > 1 ? 'block' : 'none';
+            
+            if (cart.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-cart">
+                        <i class="fas fa-cart-plus"></i>
+                        <p>Cart is empty.<br>Add items to get started.</p>
                     </div>
-                    <span style="font-weight:bold;">${lineTotal} SAR</span>
-                </div>`;
-        }).join('');
-        document.getElementById('totalPrice').innerText = total;
-    }
+                `;
+                return;
+            }
+            
+            let html = '';
+            for (let i = 0; i < cart.length; i++) {
+                const item = cart[i];
+                const itemTotal = (item.price * item.qty).toFixed(2);
+                html += `
+                    <div class="cart-item" 
+                         draggable="true" 
+                         data-index="${i}"
+                         ondragstart="handleDragStart(event, ${i})"
+                         ondragend="handleDragEnd(event)"
+                         ondragover="handleDragOver(event)"
+                         ondrop="handleDrop(event)"
+                         ondragleave="handleDragLeave(event)">
+                        <div class="drag-handle">
+                            <i class="fas fa-grip-lines"></i>
+                        </div>
+                        <div class="cart-item-info">
+                            <div class="cart-item-name">${item.emoji} ${item.name}</div>
+                            <div class="cart-item-arabic">${item.arabic}</div>
+                            <div class="cart-item-price">${item.price} SR each</div>
+                        </div>
+                        <div class="cart-item-controls">
+                            <button class="qty-btn" onclick="updateQty(${item.id}, -1)">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            <span class="qty-value">${item.qty}</span>
+                            <button class="qty-btn" onclick="updateQty(${item.id}, 1)">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        <div class="cart-item-total">${itemTotal}</div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
 
-    function toggleLang() {
-        lang = lang === 'en' ? 'ar' : 'en';
-        document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-        renderMenu(); updateCart();
-    }
+        // --- PDF GENERATION WITH NEW FORMAT ---
+        function generateReceipt() {
+            const { jsPDF } = window.jspdf;
+            
+            const doc = new jsPDF({
+                unit: 'mm',
+                format: [80, 297],
+                orientation: 'portrait'
+            });
 
-    function generatePDF() {
-        if (cart.length === 0) return;
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ unit: 'mm', format: [80, 150] });
-        doc.text("SHAWARMA REHAB", 40, 10, { align: "center" });
-        let y = 20, total = 0;
-        cart.forEach(item => {
-            const p = products[item.pid];
-            const sub = p.price * item.qty;
-            total += sub;
-            doc.text(`${item.qty}x ${p.en}`, 5, y);
-            doc.text(`${sub} SAR`, 75, y, { align: "right" });
-            y += 7;
-        });
-        doc.text(`TOTAL: ${total} SAR`, 75, y + 10, { align: "right" });
-        doc.save("Receipt.pdf");
-        cart = []; updateCart();
-    }
-</script>
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const centerX = pageWidth / 2;
+            let y = 10;
+
+            // Header
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(16);
+            doc.text('SHAWARMA REHAB', centerX, y, { align: 'center' });
+            
+            y += 6;
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text('Shawarma Rehab Restaurant', centerX, y, { align: 'center' });
+            
+            y += 8;
+            doc.setFontSize(9);
+            doc.text('--------------------------------', centerX, y, { align: 'center' });
+            
+            y += 5;
+            const dateStr = new Date().toLocaleString();
+            doc.text(dateStr, centerX, y, { align: 'center' });
+            
+            y += 5;
+            doc.text('--------------------------------', centerX, y, { align: 'center' });
+
+            // Items - New Format: Item Name (left) | Qty (center) | Amount (right)
+            y += 8;
+            
+            let grandTotal = 0;
+
+            cart.forEach(item => {
+                const total = item.qty * item.price;
+                grandTotal += total;
+                
+                // Check if we need a new page
+                if (y > 270) {
+                    doc.addPage([80, 297], 'portrait');
+                    y = 10;
+                }
+                
+                // Item Name - Left aligned, full name with word wrap if needed
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+                
+                // Split long names into multiple lines if needed
+                const nameLines = doc.splitTextToSize(item.name, 45);
+                doc.text(nameLines, 5, y);
+                
+                // Quantity - Center (x: 55)
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
+                doc.text('x' + item.qty.toString(), 55, y, { align: 'center' });
+                
+                // Amount - Right aligned (x: 75)
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+                doc.text(total.toFixed(2), 75, y, { align: 'right' });
+                
+                // Move y based on number of lines used
+                const lineHeight = 4;
+                y += Math.max(nameLines.length * lineHeight, 5) + 2;
+                
+                // Add separator line between items
+                doc.setLineWidth(0.1);
+                doc.setDrawColor(200, 200, 200);
+                doc.line(5, y - 1, 75, y - 1);
+            });
+
+            // Footer
+            y += 3;
+            doc.setDrawColor(0, 0, 0);
+            doc.setLineWidth(0.3);
+            doc.line(5, y, 75, y);
+            
+            y += 6;
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(12);
+            doc.text('TOTAL', 5, y);
+            doc.text(grandTotal.toFixed(2) + ' SR', 75, y, { align: 'right' });
+            
+            y += 8;
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9);
+            doc.text('--------------------------------', centerX, y, { align: 'center' });
+            
+            y += 5;
+            doc.text('Thank you for visiting!', centerX, y, { align: 'center' });
+            
+            y += 4;
+            doc.setFontSize(8);
+            doc.text('No VAT included', centerX, y, { align: 'center' });
+
+            // Save
+            doc.save(`Receipt_${Date.now()}.pdf`);
+            
+            // Clear cart after generating receipt
+            cart = [];
+            updateCartUI();
+        }
+
+        function toggleLanguage() {
+            alert('Language toggle feature would switch UI text here.');
+        }
+    </script>
+    
+    <style>
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+    </style>
 </body>
 </html>
